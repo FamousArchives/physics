@@ -216,9 +216,14 @@ define(function(require, exports, module) {
             disp.normalize(stiffness * this.forceFunction(dist, lMax))
                 .put(force);
 
-            if (damping)
-                if (source) force.add(v2.sub(source.velocity).mult(-damping)).put(force);
-                else        force.add(v2.mult(-damping)).put(force);
+            if (damping) {
+              if (source) {
+                force.add(v2.sub(source.velocity).mult(-damping)).put(force);
+              }
+              else {
+                force.add(v2.mult(-damping)).put(force);
+              }
+            }
 
             target.applyForce(force);
             if (source) source.applyForce(force.mult(-1));
