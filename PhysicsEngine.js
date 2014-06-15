@@ -34,13 +34,11 @@ define(function(require, exports, module) {
 
         this._buffer         = 0.0;
         this._prevTime       = now();
-        this._isSleeping     = false;
+        this._isSleeping     = true;
         this._eventHandler   = null;
         this._currAgentId    = 0;
         this._hasBodies      = false;
         this._eventHandler   = null;
-
-        this.wake();
     }
 
     var TIMESTEP = 17;
@@ -151,6 +149,8 @@ define(function(require, exports, module) {
      * @return AgentId {Number}
      */
     PhysicsEngine.prototype.attach = function attach(agents, targets, source) {
+        this.wake();
+
         if (agents instanceof Array) {
             var agentIDs = [];
             for (var i = 0; i < agents.length; i++)
@@ -362,7 +362,6 @@ define(function(require, exports, module) {
         this.forEach(function(particle) {
             particleEnergy = particle.getEnergy();
             energy += particleEnergy;
-            if (particleEnergy < particle.sleepTolerance) particle.sleep();
         });
         return energy;
     }
@@ -444,10 +443,20 @@ define(function(require, exports, module) {
     };
 
     /**
+     * Tells whether the Physics Engine is sleeping or awake.
+     * @method isActive
+     * @return {Boolean}
+     */
+    PhysicsEngine.prototype.isActive = function isSleeping() {
+        return !this._isSleeping;
+    };
+
+    /**
      * Stops the Physics Engine from updating. Emits an 'end' event.
      * @method sleep
      */
     PhysicsEngine.prototype.sleep = function sleep() {
+        if (this._isSleeping) return;
         this.emit('end', this);
         this._isSleeping = true;
     };
@@ -457,6 +466,7 @@ define(function(require, exports, module) {
      * @method wake
      */
     PhysicsEngine.prototype.wake = function wake() {
+        if (!this._isSleeping) return;
         this._prevTime = now();
         this.emit('start', this);
         this._isSleeping = false;
