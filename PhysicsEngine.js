@@ -10,7 +10,7 @@ define(function(require, exports, module) {
 
     /**
      * The Physics Engine is responsible for mediating bodies with their
-     *   interaction with forces and constraints (agents). Specifically it
+     *   interaction with forces and constraints (agents). Specifically, it
      *   is responsible for:
      *
      *   - adding and removing bodies
@@ -48,7 +48,7 @@ define(function(require, exports, module) {
 
     var now = Date.now;
 
-    //Catalogue of outputted events
+    // Catalogue of outputted events
     var _events = {
         start : 'start',
         update : 'update',
@@ -71,15 +71,32 @@ define(function(require, exports, module) {
         constraintSteps : 1,
 
         /**
-         * The energy threshold before the Engine stops updating
+         * The energy threshold required for the Physics Engine to update
          * @attribute sleepTolerance
          * @type Number
          */
-        sleepTolerance : 1e-7
+        sleepTolerance : 1e-7,
+
+        /**
+         * The maximum velocity magnitude of a physics body
+         *      Range : [0, Infinity]
+         * @attribute velocityCap
+         * @type Number
+         */
+        velocityCap : undefined,
+
+        /**
+         * The maximum angular velocity magnitude of a physics body
+         *      Range : [0, Infinity]
+         * @attribute angularVelocityCap
+         * @type Number
+         */
+        angularVelocityCap : undefined
     };
 
     /**
      * Options setter
+     *
      * @method setOptions
      * @param options {Object}
      */
@@ -89,7 +106,7 @@ define(function(require, exports, module) {
 
     /**
      * Method to add a physics body to the engine. Necessary to update the
-     * body over time.
+     *   body over time.
      *
      * @method addBody
      * @param body {Body}
@@ -108,7 +125,7 @@ define(function(require, exports, module) {
 
     /**
      * Remove a body from the engine. Detaches body from all forces and
-     * constraints.
+     *   constraints.
      *
      * @method removeBody
      * @param body {Body}
@@ -146,7 +163,7 @@ define(function(require, exports, module) {
 
     /**
      * Attaches a force or constraint to a Body. Returns an AgentId of the
-     * attached agent which can be used to detach the agent.
+     *   attached agent which can be used to detach the agent.
      *
      * @method attach
      * @param agent {Agent|Array.Agent} A force, constraint, or array of them.
@@ -179,7 +196,7 @@ define(function(require, exports, module) {
 
     /**
      * Undoes PhysicsEngine.attach. Removes an agent and its associated
-     * effect on its affected Bodies.
+     *   effect on its affected Bodies.
      *
      * @method detach
      * @param agentID {AgentId} The agentId of a previously defined agent
@@ -271,7 +288,7 @@ define(function(require, exports, module) {
 
     /**
      * Iterates over every Particle and applies a function whose first
-     * argument is the Particle
+     *   argument is the Particle
      *
      * @method forEachParticle
      * @param fn {Function} Function to iterate over
@@ -285,7 +302,7 @@ define(function(require, exports, module) {
 
     /**
      * Iterates over every Body that isn't a Particle and applies
-     * a function whose first argument is the Body
+     *   a function whose first argument is the Body
      *
      * @method forEachBody
      * @param fn {Function} Function to iterate over
@@ -300,7 +317,7 @@ define(function(require, exports, module) {
 
     /**
      * Iterates over every Body and applies a function whose first
-     * argument is the Body
+     *   argument is the Body
      *
      * @method forEach
      * @param fn {Function} Function to iterate over
@@ -337,11 +354,15 @@ define(function(require, exports, module) {
 
     function _updateVelocities(particle, dt) {
         particle.integrateVelocity(dt);
+        if (this.options.velocityCap)
+            particle.velocity.cap(this.options.velocityCap).put(particle.velocity);
     }
 
     function _updateAngularVelocities(body, dt) {
         body.integrateAngularMomentum(dt);
         body.updateAngularVelocity();
+        if (this.options.angularVelocityCap)
+            body.angularVelocity.cap(this.options.angularVelocityCap).put(body.angularVelocity);
     }
 
     function _updateOrientations(body, dt) {
@@ -392,7 +413,7 @@ define(function(require, exports, module) {
 
     /**
      * Calculates the kinetic energy of all Body objects and potential energy
-     * of all attached agents.
+     *   of all attached agents.
      *
      * TODO: implement.
      * @method getEnergy
@@ -404,7 +425,7 @@ define(function(require, exports, module) {
 
     /**
      * Updates all Body objects managed by the physics engine over the
-     * time duration since the last time step was called.
+     *   time duration since the last time step was called.
      *
      * @method step
      */
@@ -441,6 +462,7 @@ define(function(require, exports, module) {
 
     /**
      * Tells whether the Physics Engine is sleeping or awake.
+     *
      * @method isSleeping
      * @return {Boolean}
      */
@@ -450,6 +472,7 @@ define(function(require, exports, module) {
 
     /**
      * Tells whether the Physics Engine is sleeping or awake.
+     *
      * @method isActive
      * @return {Boolean}
      */
@@ -459,6 +482,7 @@ define(function(require, exports, module) {
 
     /**
      * Stops the Physics Engine update loop. Emits an 'end' event.
+     *
      * @method sleep
      */
     PhysicsEngine.prototype.sleep = function sleep() {
@@ -472,6 +496,7 @@ define(function(require, exports, module) {
 
     /**
      * Restarts the Physics Engine update loop. Emits an 'start' event.
+     *
      * @method wake
      */
     PhysicsEngine.prototype.wake = function wake() {
